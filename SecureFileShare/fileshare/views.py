@@ -1,12 +1,10 @@
-import json
-from sqlite3 import Timestamp
+from django.conf import settings
 from django.shortcuts import render,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from . models import ClientUserProfile,UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
-import hashlib
 import os
 import base64
 
@@ -72,3 +70,38 @@ def download_file(request, file_id):
     secure_link = f'/download-file/{file_id}/secure-link/?token={signed_token}'
 
     return JsonResponse({'download_link':secure_link, 'message':'success'})
+
+
+@login_required
+def secure_download(request,file_id):
+    file = get_object_or_404(UploadedFile,id=file_id)
+
+    token = request.GET.get('token','')
+
+    signer = TimestampSigner()
+
+    try:
+        unsigned_data = signer.unsign(token,max_age=settings.SECURE_LINK_MAX_AGE)
+        file_id,user_id = map(int, unsigned_data.split(':'))
+    except (BadSignature, ValueError):
+        return HttpResponseForbidden('Invalid or expired download link')
+    
+    if request.user.id != user_id or file_id != file.id:
+        return HttpResponseForbidden('Invalid download link')
+    
+    file_path = file.file.path
+    with open(file_path,'rb') as f:
+        response = HttpResponse(f.read(),content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{file.file.name}"'
+        return response
+    
+@login_required
+def list_uploaded_file(request):
+    if request.user.is_staff:
+        files = UploadedFile.objects.all()
+    else:
+        files = UploadedFile.objects.filter(user=request.user)
+
+    file_list = [{'id':file.id, 'file_type': file.file_type, 'filename': file.file.name} for file in files]
+
+    return JsonResponse({'files': file_list})
