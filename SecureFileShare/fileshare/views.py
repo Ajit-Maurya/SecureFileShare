@@ -1,9 +1,11 @@
 import json
+from sqlite3 import Timestamp
 from django.shortcuts import render,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse
 from . models import ClientUserProfile,UploadedFile
+from django.core.signing import TimestampSigner, BadSignature
 import hashlib
 import os
 import base64
@@ -42,4 +44,31 @@ def signup(request):
 
         ClientUserProfile.objects.create(user=user, verification_code=verification_code)
 
-        return JsonResponse()
+        return JsonResponse({'verification_url':f'/verify-email/{verification_code}'})
+    
+    return JsonResponse({'message':'Invalid request'})
+
+def verify_email(request,verification_code):
+    client_user_profile = get_object_or_404(ClientUserProfile,verification_code=verification_code)
+    user = client_user_profile.user
+    user.is_active = True
+    user.save()
+
+    return JsonResponse({'message':'Email verified successfully'})
+
+@login_required
+def download_file(request, file_id):
+    file = get_object_or_404(UploadedFile, id=file_id)
+
+    token = request.GET.get('token','')
+
+    signer = TimestampSigner()
+
+    try:
+        signed_token= signer.sign(f'{file_id}:{request.user.id}')
+    except BadSignature:
+        return JsonResponse({'message':'Error creating secure download link'})
+    
+    secure_link = f'/download-file/{file_id}/secure-link/?token={signed_token}'
+
+    return JsonResponse({'download_link':secure_link, 'message':'success'})
