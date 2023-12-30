@@ -12,15 +12,17 @@ import base64
 @login_required
 def upload_file(request):
     if request.method == 'POST' and request.user.is_staff:
-        file_type = request.POST['file_type']
-        if file_type not in ['pptx','docx','xslx']:
+        file_type = request.POST.get('file_type','').lower()
+        allowed_file_types = ['pptx','docx','xslx']
+
+        if file_type not in allowed_file_types:
             return JsonResponse({'message':'Invalid file type'})
         
-        uploaded_file = request.FILES['file']
-        uploaded_file_type = uploaded_file.name.split('.')[-1]
+        uploaded_file = request.FILES.get('file')
 
-        if uploaded_file_type != file_type:
-            return JsonResponse({'message':'Invalid file type'})
+        if not uploaded_file or not uploaded_file.name.endswith(
+            tuple(f'.{file_type}' for file_type in allowed_file_types)):
+            return JsonResponse({'message':'Invalid file or file type'})
         
         new_file = UploadedFile(user=request.user, file=uploaded_file, file_type=file_type)
         new_file.save()
@@ -33,9 +35,9 @@ def generate_verification_code():
 
 def signup(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        email = request.POST['email']
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        email = request.POST.get('email')
 
         user = User.objects.create_user(username=username,password=password, email=email)
         verification_code = generate_verification_code()
