@@ -1,0 +1,413 @@
+{
+	"info": {
+		"_postman_id": "d838a228-c424-409a-b5b3-37f6a7ae272b",
+		"name": "API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16943504"
+	},
+	"item": [
+		{
+			"name": "Ops login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/login/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"login",
+						""
+					]
+				},
+				"description": "This API endpoint is used to log in to the file sharing system via an HTTP POST request. The request should be sent to [http://127.0.0.1:8000/file-share/login/](http://127.0.0.1:8000/file-share/login/) with form-data as the request body type. The payload should include the 'username' and 'password' parameters, both of type 'text'.\n\nUpon a successful execution, the API returns a status code of 200 along with a JSON response containing a 'message' key."
+			},
+			"response": []
+		},
+		{
+			"name": "upload file",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// // Check if response exists",
+							"// if (pm && pm.response && pm.response.headers) {",
+							"//     // Extract csrftoken from Set-Cookie header",
+							"//     const setCookieHeader = pm.response.headers.get('Set-Cookie');",
+							"",
+							"//     if (setCookieHeader) {",
+							"//         const matches = /csrftoken=([^;]+)/.exec(setCookieHeader);",
+							"//         if (matches && matches.length > 1) {",
+							"//             pm.environment.set('csrftoken', matches[1]);",
+							"//         }",
+							"",
+							"//         // Set X-CSRFToken header for the next request",
+							"//         pm.request.headers.add({",
+							"//             key: 'X-CSRFToken',",
+							"//             value: pm.environment.get('csrftoken')",
+							"//         });",
+							"//     } else {",
+							"//         console.error('Set-Cookie header not found in the response.');",
+							"//     }",
+							"// } else {",
+							"//     console.error('Response or headers not available.');",
+							"// }",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "e579b9b4ef4cd8bdee9d1f926c0e21017b8a959e",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{csrf_token}}",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "Authorization",
+						"value": "Token  {{admin_token}}",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file_type",
+							"value": "xlsx",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "tempp.xlsx"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/upload-file/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"upload-file",
+						""
+					]
+				},
+				"description": "This endpoint allows users to upload a file for sharing. The HTTP POST request should be made to [http://127.0.0.1:8000/file-share/upload-file/](http://127.0.0.1:8000/file-share/upload-file/). The request should use form-data as the request body type with two parameters: \"file_type\" (text type) and \"file\" (file type). Upon successful execution, the endpoint returns a 200 status with a JSON response containing a \"message\" indicating the status of the file upload."
+			},
+			"response": []
+		},
+		{
+			"name": "List Uploaded File",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the response body as JSON",
+							"const responseBodyData = pm.response.json();",
+							"",
+							"// Extract the verification URL from the response",
+							"const fileId = responseBodyData.files[0].id;",
+							"",
+							"// Set it as an environment variable",
+							"pm.environment.set(\"file_id\", fileId);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/list-uploaded-files/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"list-uploaded-files",
+						""
+					]
+				},
+				"description": "This endpoint makes an HTTP GET request to retrieve a list of uploaded files. The response will include a status code of 200, along with an array of files, each containing an id, file type, and filename."
+			},
+			"response": []
+		},
+		{
+			"name": "Ops logout",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/logout/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"logout",
+						""
+					]
+				},
+				"description": "This endpoint is used to log out from the file sharing system. Upon successful execution, it returns a status code of 200 along with an empty message in the response body."
+			},
+			"response": []
+		},
+		{
+			"name": "User SignUp",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the response body as JSON",
+							"const responseBodyData = pm.response.json();",
+							"",
+							"// Extract the verification URL from the response",
+							"const verificationUrl = responseBodyData.verification_url;",
+							"",
+							"// Set it as an environment variable",
+							"pm.environment.set(\"verify_link\", verificationUrl);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "john",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "john@123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/signup/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"signup",
+						""
+					]
+				},
+				"description": "This HTTP POST request is used to sign up for a file-sharing service. The request should be made to [http://127.0.0.1:8000/file-share/signup/](http://127.0.0.1:8000/file-share/signup/)\n\n### Request Body\n\nThe request body should be of form-data type and include the following parameters:\n\n- **username** (text): The username for the account.\n- **password** (text): The password for the account.\n    \n\n### Response\n\nUpon successful execution, the API returns a status code of 200 along with a JSON response containing the verification URL.\n\nExample response:\n\n``` json\n{\n    \"verification_url\": \"<URL>\"\n}\n\n ```"
+			},
+			"response": []
+		},
+		{
+			"name": "Verify Email",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share{{verify_link}}",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share{{verify_link}}"
+					]
+				},
+				"description": "This endpoint makes an HTTP GET request to retrieve a file share verification link. The request does not include a request body. Upon successful execution, the response will have a status code of 200 and will include a message indicating the result of the operation."
+			},
+			"response": []
+		},
+		{
+			"name": "User Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "john",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "john@123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/login/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"login",
+						""
+					]
+				},
+				"description": "This endpoint is used to log in with a username and password. The HTTP POST request should be made to [http://127.0.0.1:8000/file-share/login/](http://127.0.0.1:8000/file-share/login/) with form-data as the request body type. The request should include the \"username\" and \"password\" parameters, both of type \"text\". Upon a successful execution, the endpoint returns a status code of 200 along with a JSON response containing a \"message\" key."
+			},
+			"response": []
+		},
+		{
+			"name": "Download Link",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the response body as JSON",
+							"const responseBodyData = pm.response.json();",
+							"",
+							"// Extract the verification URL from the response",
+							"const download_link = responseBodyData.download_link;",
+							"",
+							"// Set it as an environment variable",
+							"pm.environment.set(\"download_link\", download_link);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share/download-file/{{file_id}}/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share",
+						"download-file",
+						"{{file_id}}",
+						""
+					]
+				},
+				"description": "\nThis endpoint makes an HTTP GET request to retrieve a file for download. The request should be made to the URL http://127.0.0.1:8000/file-share/download-file/1/.\n\nThe response to the request will have a status code of 200, along with a JSON object containing a download link and a message. The \"download_link\" field will provide the link to download the file, and the \"message\" field may contain additional information related to the download.\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Download using secure link",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/file-share{{download_link}}",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"file-share{{download_link}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
