@@ -1,20 +1,17 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
-from . models import ClientUserProfile,UploadedFile
+from django.http import FileResponse,HttpResponseNotFound
+from .models import ClientUserProfile, UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
 from django.contrib.auth import authenticate,login,logout
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.decorators import authentication_classes
-from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
-from rest_framework.authentication import TokenAuthentication
+from django.views.decorators.csrf import csrf_exempt
 import os
 import base64
 
-@api_view(['POST'])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@csrf_exempt
 def user_login(request):
     '''used for login
         parameters:
@@ -38,10 +35,8 @@ def user_login(request):
         return JsonResponse({'message':'Invalid username or password'})
     return JsonResponse({'error':'Invalid request method'}, status=400)
 
-
-@api_view(['POST'])
-@authentication_classes([])
-@permission_classes([IsAuthenticated])      
+@csrf_exempt
+@login_required    
 def user_logout(request):
     '''
     used of logout
@@ -55,137 +50,159 @@ def user_logout(request):
         return JsonResponse({'message':'Logged out succesfully'})
     return JsonResponse({'error':'Invalid request method'},status=400)
 
-@api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAdminUser])
+@csrf_exempt
+@login_required
 def upload_file(request):
     '''
-    used for uplaoding a file, where only Operation User can perform this
+    used for file upload (only admin can do this)
 
     parameter:
-    file_type: str (i.e. pdf, docx etc.)
-    file: file (i.e. file to uploaded)
+    file_type: str (i.e. xlsx,docx,pptx)
+    file: file
 
-    return http status code 200, 400 or 401
+    returns status code 200
     '''
-    file_type = request.POST.get('file_type','').lower()
-    allowed_file_types = ['pptx','docx','xslx']
+    if request.method == 'POST' and request.user.is_staff:
+        file_type = request.POST.get('file_type', '').lower()
+        allowed_file_types = ['pptx', 'docx', 'xlsx']
 
-    if file_type not in allowed_file_types:
-        return JsonResponse({'message':'Invalid file type'}, status=400)
-        
-    uploaded_file = request.FILES.get('file')
+        if file_type not in allowed_file_types:
+            return JsonResponse({'message': 'Invalid file type'})
 
-    if not uploaded_file or not uploaded_file.name.endswith(
-        tuple(f'.{file_type}' for file_type in allowed_file_types)):
-        return JsonResponse({'message':'Invalid file or file type'}, status=400)
-        
-    new_file = UploadedFile(user=request.user, file=uploaded_file, file_type=file_type)
-    new_file.save()
-    return JsonResponse({'message':'File uploaded successfuly'})
+        uploaded_file = request.FILES.get('file')
+
+        if not uploaded_file or not uploaded_file.name.endswith(tuple(f'.{file_type}' for file_type in allowed_file_types)):
+            return JsonResponse({'message': 'Invalid file or file type'})
+
+        new_file = UploadedFile(user=request.user, file=uploaded_file, file_type=file_type)
+        new_file.save()
+        return JsonResponse({'message': 'File uploaded successfully'})
+
+    return JsonResponse({'message': 'Unauthorized access'})
 
 def generate_verification_code():
     '''
-    Generates unique random code
+    used for generating token
 
     parameter: None
 
-    returns generated code
+    return genarated token
     '''
-    return base64.urlsafe_b64encode(os.urandom(30).decode('utf-8'))
+    return base64.urlsafe_b64encode(os.urandom(30)).decode('utf-8')
 
-@api_view(['POST'])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@csrf_exempt
 def signup(request):
     '''
-    Used for user sign up
+    used new user signup
 
-    parameter: 
+    parameter:
     username: str
     password: str
     email: str
 
-    returns 
+    returns an verification url and sends a verification email
     '''
-    username = request.POST.get('username')
-    password = request.POST.get('password')
-    email = request.POST.get('email')
+    if request.method == 'POST':
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
+        email = request.POST.get('email', '')
 
-    user = User.objects.create_user(
-        username=username,password=password,
-        email=email
-        )
-    verification_code = generate_verification_code()
+        user = User.objects.create_user(username=username, password=password, email=email)
+        verification_code = generate_verification_code()
 
-    ClientUserProfile.objects.create(
-        user=user,
-        verification_code=verification_code)
+        ClientUserProfile.objects.create(user=user, verification_code=verification_code)
 
-    return JsonResponse({'verification_url':f'/verify-email/{verification_code}'})
+        return JsonResponse({'verification_url': f'/verify-email/{verification_code}'})
 
-def verify_email(request,verification_code):
-    client_user_profile = get_object_or_404(ClientUserProfile,verification_code=verification_code)
+    return JsonResponse({'message': 'Invalid request'})
+
+def verify_email(request, verification_code):
+    '''
+    verifies the new user email, marks the account as active
+
+    parameter:
+    verification_code: str
+
+    return status code 200
+    '''
+    client_user_profile = get_object_or_404(ClientUserProfile, verification_code=verification_code)
     user = client_user_profile.user
     user.is_active = True
     user.save()
 
-    return JsonResponse({'message':'Email verified successfully'})
+    return JsonResponse({'message': 'Email verified successfully'})
 
-@api_view(['GET'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([AllowAny])
+@csrf_exempt
+@login_required
 def download_file(request, file_id):
+    '''
+    used for generating secure download
+
+    parameters:
+    file_id: int
+
+    returns secure link for download
+    '''
     file = get_object_or_404(UploadedFile, id=file_id)
 
-    token = request.GET.get('token','')
-
     signer = TimestampSigner()
-
     try:
-        signed_token= signer.sign(f'{file_id}:{request.user.id}')
+        signed_token = signer.sign(f'{file_id}:{request.user.id}')
     except BadSignature:
-        return JsonResponse({'message':'Error creating secure download link'})
-    
+        return JsonResponse({'message': 'Error creating secure download link'})
+
     secure_link = f'/download-file/{file_id}/secure-link/?token={signed_token}'
 
-    return JsonResponse({'download_link':secure_link, 'message':'success'})
+    return JsonResponse({'download_link': secure_link, 'message': 'success'})
 
+@csrf_exempt
+@login_required
+def secure_download(request, file_id):
+    '''
+    download files using secure link
 
-@api_view(['GET'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([AllowAny])
-def secure_download(request,file_id):
-    file = get_object_or_404(UploadedFile,id=file_id)
+    parameter:
+    file_id: int
 
-    token = request.GET.get('token','')
+    return binary stream of file
+    '''
+    file = get_object_or_404(UploadedFile, id=file_id)
+    token = request.GET.get('token', '')
 
     signer = TimestampSigner()
 
     try:
-        unsigned_data = signer.unsign(token,max_age=settings.SECURE_LINK_MAX_AGE)
-        file_id,user_id = map(int, unsigned_data.split(':'))
+        unsigned_data = signer.unsign(token, max_age=settings.SECURE_LINK_MAX_AGE)
+        file_id, user_id = map(int, unsigned_data.split(':'))
     except (BadSignature, ValueError):
         return HttpResponseForbidden('Invalid or expired download link')
-    
+
     if request.user.id != user_id or file_id != file.id:
         return HttpResponseForbidden('Invalid download link')
-    
+
     file_path = file.file.path
-    with open(file_path,'rb') as f:
-        response = HttpResponse(f.read(),content_type='application/octet-stream')
-        response['Content-Disposition'] = f'attachment; filename="{file.file.name}"'
-        return response
+
+    # Use FileResponse to serve the file directly
+    try:
+        return FileResponse(open(file_path, 'rb'), content_type='application/octet-stream')
+    except FileNotFoundError:
+        return HttpResponseNotFound('File not found')
+
+@csrf_exempt
+@login_required
+def list_uploaded_files(request):
+    '''
+    list all the uploaded file
+
+    parameter: None
     
-@api_view(['GET'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([AllowAny])
-def list_uploaded_file(request):
+    return list of all uploaded file
+    '''
     if request.user.is_staff:
         files = UploadedFile.objects.all()
     else:
         files = UploadedFile.objects.filter(user=request.user)
 
-    file_list = [{'id':file.id, 'file_type': file.file_type, 'filename': file.file.name} for file in files]
+    file_list = [{'id': file.id, 'file_type': file.file_type, 'filename': file.file.name} for file in files]
 
     return JsonResponse({'files': file_list})
