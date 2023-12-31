@@ -2,7 +2,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.http import FileResponse,HttpResponseNotFound
 from .models import ClientUserProfile, UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
