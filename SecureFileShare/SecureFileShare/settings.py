@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'fileshare',
     'rest_framework',
     'rest_framework.authtoken',
+    'djoser',
 ]
 
 MIDDLEWARE = [
@@ -135,5 +136,10 @@ AUTHENTICATION_BACKENDS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
     ],
+}
+
+DJOSER = {
+    'USER_ID_FIELD' : 'username',
 }

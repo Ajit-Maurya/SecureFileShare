@@ -5,11 +5,9 @@ from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from . models import ClientUserProfile,UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
 from django.contrib.auth import authenticate,login,logout
-from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.decorators import authentication_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import AllowAny,IsAuthenticated, IsAdminUser
 from rest_framework.authentication import TokenAuthentication
 import os
 import base64
@@ -41,7 +39,9 @@ def user_login(request):
     return JsonResponse({'error':'Invalid request method'}, status=400)
 
 
-@authentication_classes([SessionAuthentication, TokenAuthentication])      
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([IsAuthenticated])      
 def user_logout(request):
     '''
     used of logout
@@ -55,11 +55,9 @@ def user_logout(request):
         return JsonResponse({'message':'Logged out succesfully'})
     return JsonResponse({'error':'Invalid request method'},status=400)
 
-@authentication_classes([SessionAuthentication, TokenAuthentication])
-def obtain_token(request):
-    return obtain_auth_token(request)
-
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAdminUser])
 def upload_file(request):
     '''
     used for uplaoding a file, where only Operation User can perform this
@@ -70,24 +68,21 @@ def upload_file(request):
 
     return http status code 200, 400 or 401
     '''
-    if request.method == 'POST' and request.user.is_staff:
-        file_type = request.POST.get('file_type','').lower()
-        allowed_file_types = ['pptx','docx','xslx']
+    file_type = request.POST.get('file_type','').lower()
+    allowed_file_types = ['pptx','docx','xslx']
 
-        if file_type not in allowed_file_types:
-            return JsonResponse({'message':'Invalid file type'}, status=400)
+    if file_type not in allowed_file_types:
+        return JsonResponse({'message':'Invalid file type'}, status=400)
         
-        uploaded_file = request.FILES.get('file')
+    uploaded_file = request.FILES.get('file')
 
-        if not uploaded_file or not uploaded_file.name.endswith(
-            tuple(f'.{file_type}' for file_type in allowed_file_types)):
-            return JsonResponse({'message':'Invalid file or file type'}, status=400)
+    if not uploaded_file or not uploaded_file.name.endswith(
+        tuple(f'.{file_type}' for file_type in allowed_file_types)):
+        return JsonResponse({'message':'Invalid file or file type'}, status=400)
         
-        new_file = UploadedFile(user=request.user, file=uploaded_file, file_type=file_type)
-        new_file.save()
-        return JsonResponse({'message':'File uploaded successfuly'})
-    
-    return JsonResponse({'message':'Unauthorized access'}, status=401)
+    new_file = UploadedFile(user=request.user, file=uploaded_file, file_type=file_type)
+    new_file.save()
+    return JsonResponse({'message':'File uploaded successfuly'})
 
 def generate_verification_code():
     '''
@@ -99,6 +94,9 @@ def generate_verification_code():
     '''
     return base64.urlsafe_b64encode(os.urandom(30).decode('utf-8'))
 
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def signup(request):
     '''
     Used for user sign up
@@ -110,24 +108,21 @@ def signup(request):
 
     returns 
     '''
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        email = request.POST.get('email')
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    email = request.POST.get('email')
 
-        user = User.objects.create_user(
-            username=username,password=password,
-            email=email
-            )
-        verification_code = generate_verification_code()
+    user = User.objects.create_user(
+        username=username,password=password,
+        email=email
+        )
+    verification_code = generate_verification_code()
 
-        ClientUserProfile.objects.create(
-            user=user,
-            verification_code=verification_code)
+    ClientUserProfile.objects.create(
+        user=user,
+        verification_code=verification_code)
 
-        return JsonResponse({'verification_url':f'/verify-email/{verification_code}'})
-    
-    return JsonResponse({'message':'Invalid request'})
+    return JsonResponse({'verification_url':f'/verify-email/{verification_code}'})
 
 def verify_email(request,verification_code):
     client_user_profile = get_object_or_404(ClientUserProfile,verification_code=verification_code)
@@ -137,7 +132,9 @@ def verify_email(request,verification_code):
 
     return JsonResponse({'message':'Email verified successfully'})
 
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
 def download_file(request, file_id):
     file = get_object_or_404(UploadedFile, id=file_id)
 
@@ -155,7 +152,9 @@ def download_file(request, file_id):
     return JsonResponse({'download_link':secure_link, 'message':'success'})
 
 
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
 def secure_download(request,file_id):
     file = get_object_or_404(UploadedFile,id=file_id)
 
@@ -178,7 +177,9 @@ def secure_download(request,file_id):
         response['Content-Disposition'] = f'attachment; filename="{file.file.name}"'
         return response
     
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
 def list_uploaded_file(request):
     if request.user.is_staff:
         files = UploadedFile.objects.all()
