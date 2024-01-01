@@ -1,13 +1,24 @@
 {
 	"info": {
 		"_postman_id": "d838a228-c424-409a-b5b3-37f6a7ae272b",
-		"name": "API",
+		"name": "Secure File Share",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "16943504"
 	},
 	"item": [
 		{
 			"name": "Ops login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"postman.setNextRequest(\"POST upload file\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -16,12 +27,12 @@
 					"formdata": [
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{admin_username}}",
 							"type": "text"
 						},
 						{
 							"key": "password",
-							"value": "admin",
+							"value": "{{admin_password}}",
 							"type": "text"
 						}
 					]
@@ -53,29 +64,17 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"// // Check if response exists",
-							"// if (pm && pm.response && pm.response.headers) {",
-							"//     // Extract csrftoken from Set-Cookie header",
-							"//     const setCookieHeader = pm.response.headers.get('Set-Cookie');",
 							"",
-							"//     if (setCookieHeader) {",
-							"//         const matches = /csrftoken=([^;]+)/.exec(setCookieHeader);",
-							"//         if (matches && matches.length > 1) {",
-							"//             pm.environment.set('csrftoken', matches[1]);",
-							"//         }",
-							"",
-							"//         // Set X-CSRFToken header for the next request",
-							"//         pm.request.headers.add({",
-							"//             key: 'X-CSRFToken',",
-							"//             value: pm.environment.get('csrftoken')",
-							"//         });",
-							"//     } else {",
-							"//         console.error('Set-Cookie header not found in the response.');",
-							"//     }",
-							"// } else {",
-							"//     console.error('Response or headers not available.');",
-							"// }",
 							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"postman.setNextRequest(\"GET List Uploaded File\");"
 						],
 						"type": "text/javascript"
 					}
@@ -83,14 +82,7 @@
 			],
 			"request": {
 				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "e579b9b4ef4cd8bdee9d1f926c0e21017b8a959e",
-							"type": "string"
-						}
-					]
+					"type": "noauth"
 				},
 				"method": "POST",
 				"header": [
@@ -112,7 +104,7 @@
 					"formdata": [
 						{
 							"key": "file_type",
-							"value": "xlsx",
+							"value": "{{file_type}}",
 							"type": "text"
 						},
 						{
@@ -168,7 +160,9 @@
 							"const fileId = responseBodyData.files[0].id;",
 							"",
 							"// Set it as an environment variable",
-							"pm.environment.set(\"file_id\", fileId);"
+							"pm.environment.set(\"file_id\", fileId);",
+							"",
+							"postman.setNextRequest(\"Ops logout\");"
 						],
 						"type": "text/javascript"
 					}
@@ -199,6 +193,17 @@
 		},
 		{
 			"name": "Ops logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"postman.setNextRequest(\"POST User SignUp\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -236,7 +241,9 @@
 							"const verificationUrl = responseBodyData.verification_url;",
 							"",
 							"// Set it as an environment variable",
-							"pm.environment.set(\"verify_link\", verificationUrl);"
+							"pm.environment.set(\"verify_link\", verificationUrl);",
+							"",
+							"postman.setNextRequest(\"GET Verify Email\");"
 						],
 						"type": "text/javascript"
 					}
@@ -282,6 +289,17 @@
 		},
 		{
 			"name": "Verify Email",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"postman.setNextRequest(\"POST User Login\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -299,12 +317,23 @@
 						"file-share{{verify_link}}"
 					]
 				},
-				"description": "This endpoint makes an HTTP GET request to retrieve a file share verification link. The request does not include a request body. Upon successful execution, the response will have a status code of 200 and will include a message indicating the result of the operation."
+				"description": "This endpoint makes an HTTP GET request to verify and activate new account using verification link. The request does not include a request body. Upon successful execution, the response will have a status code of 200 and will include a message indicating the result of the operation."
 			},
 			"response": []
 		},
 		{
 			"name": "User Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"postman.setNextRequest(\"GET Download Link\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -357,7 +386,9 @@
 							"const download_link = responseBodyData.download_link;",
 							"",
 							"// Set it as an environment variable",
-							"pm.environment.set(\"download_link\", download_link);"
+							"pm.environment.set(\"download_link\", download_link);",
+							"",
+							"postman.setNextRequest(\"GET Download using secure link\");"
 						],
 						"type": "text/javascript"
 					}
@@ -389,6 +420,17 @@
 		},
 		{
 			"name": "Download using secure link",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"postman.setNextRequest(null);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -405,7 +447,8 @@
 					"path": [
 						"file-share{{download_link}}"
 					]
-				}
+				},
+				"description": "Download a file using a secure link."
 			},
 			"response": []
 		}
