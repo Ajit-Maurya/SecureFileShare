@@ -149,7 +149,7 @@ DJOSER = {
 
 SECURE_LINK_MAX_AGE = 60 * 60
 
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_HOST_USER = '94adbf51f2a934'
-EMAIL_HOST_PASSWORD = 'c6c3b705ca32de'
-EMAIL_PORT = '2525'
+# EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+# EMAIL_HOST_USER = 'your_id'
+# EMAIL_HOST_PASSWORD = 'your_id'
+# EMAIL_PORT = '2525'
