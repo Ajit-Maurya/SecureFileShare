@@ -13,7 +13,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"postman.setNextRequest(\"POST upload file\");"
+							"postman.setNextRequest(\"upload file\");"
 						],
 						"type": "text/javascript"
 					}
@@ -74,7 +74,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"postman.setNextRequest(\"GET List Uploaded File\");"
+							"postman.setNextRequest(\"List Uploaded File\");"
 						],
 						"type": "text/javascript"
 					}
@@ -198,7 +198,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"postman.setNextRequest(\"POST User SignUp\");"
+							"postman.setNextRequest(\"User SignUp\");"
 						],
 						"type": "text/javascript"
 					}
@@ -243,7 +243,7 @@
 							"// Set it as an environment variable",
 							"pm.environment.set(\"verify_link\", verificationUrl);",
 							"",
-							"postman.setNextRequest(\"GET Verify Email\");"
+							"postman.setNextRequest(\"Verify Email\");"
 						],
 						"type": "text/javascript"
 					}
@@ -294,7 +294,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"postman.setNextRequest(\"POST User Login\");"
+							"postman.setNextRequest(\"User Login\");"
 						],
 						"type": "text/javascript"
 					}
@@ -328,7 +328,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"postman.setNextRequest(\"GET Download Link\");"
+							"postman.setNextRequest(\"Download Link\");"
 						],
 						"type": "text/javascript"
 					}
@@ -388,7 +388,7 @@
 							"// Set it as an environment variable",
 							"pm.environment.set(\"download_link\", download_link);",
 							"",
-							"postman.setNextRequest(\"GET Download using secure link\");"
+							"postman.setNextRequest(\"Download using secure link\");"
 						],
 						"type": "text/javascript"
 					}
