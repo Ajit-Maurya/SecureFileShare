@@ -8,7 +8,7 @@ from .models import ClientUserProfile, UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
 from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import csrf_exempt
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 import os
 import base64
 
@@ -125,7 +125,7 @@ def signup(request):
 
         verification_url = f'/verify-email/{verification_code}'
 
-        mail(verification_url,"Account creation verification")
+        # mail(verification_url,"Account creation verification")
 
         return JsonResponse({'verification_url': verification_url})
 
