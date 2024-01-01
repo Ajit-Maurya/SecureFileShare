@@ -8,8 +8,19 @@ from .models import ClientUserProfile, UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
 from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
 import os
 import base64
+
+def mail(url,subject):
+    message = "http://127.0.0.1:8000" + url
+    send_mail(
+        subject,
+        message,
+        'django@mail.com',
+        ['mauryaajit.am@gmail.com'],
+        fail_silently=False,
+    )
 
 @csrf_exempt
 def user_login(request):
@@ -112,7 +123,11 @@ def signup(request):
 
         ClientUserProfile.objects.create(user=user, verification_code=verification_code)
 
-        return JsonResponse({'verification_url': f'/verify-email/{verification_code}'})
+        verification_url = f'/verify-email/{verification_code}'
+
+        mail(verification_url,"Account creation verification")
+
+        return JsonResponse({'verification_url': verification_url})
 
     return JsonResponse({'message': 'Invalid request'})
 
