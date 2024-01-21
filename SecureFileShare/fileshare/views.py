@@ -8,7 +8,7 @@ from .models import ClientUserProfile, UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
 from django.contrib.auth import authenticate,login,logout
 from django.views.decorators.csrf import csrf_exempt
-# from django.core.mail import send_mail
+from django.core.mail import send_mail
 import os
 import base64
 
@@ -22,7 +22,6 @@ def mail(url,subject):
         fail_silently=False,
     )
 
-@csrf_exempt
 def user_login(request):
     '''used for login
         parameters:
@@ -46,7 +45,6 @@ def user_login(request):
         return JsonResponse({'message':'Invalid username or password'})
     return JsonResponse({'error':'Invalid request method'}, status=400)
 
-@csrf_exempt
 @login_required    
 def user_logout(request):
     '''
@@ -61,7 +59,6 @@ def user_logout(request):
         return JsonResponse({'message':'Logged out succesfully'})
     return JsonResponse({'error':'Invalid request method'},status=400)
 
-@csrf_exempt
 @login_required
 def upload_file(request):
     '''
@@ -101,7 +98,6 @@ def generate_verification_code():
     '''
     return base64.urlsafe_b64encode(os.urandom(30)).decode('utf-8')
 
-@csrf_exempt
 def signup(request):
     '''
     used new user signup
@@ -147,7 +143,6 @@ def verify_email(request, verification_code):
 
     return JsonResponse({'message': 'Email verified successfully'})
 
-@csrf_exempt
 @login_required
 def download_file(request, file_id):
     '''
@@ -170,7 +165,6 @@ def download_file(request, file_id):
 
     return JsonResponse({'download_link': secure_link, 'message': 'success'})
 
-@csrf_exempt
 @login_required
 def secure_download(request, file_id):
     '''
@@ -203,7 +197,6 @@ def secure_download(request, file_id):
     except FileNotFoundError:
         return HttpResponseNotFound('File not found')
 
-@csrf_exempt
 @login_required
 def list_uploaded_files(request):
     '''
