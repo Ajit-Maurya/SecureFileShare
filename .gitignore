@@ -4,3 +4,6 @@ data/
 
 __pypackeges__/
 __pycache__
+
+.dockerignore
+venv/
