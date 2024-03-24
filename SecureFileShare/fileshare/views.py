@@ -48,7 +48,7 @@ def user_login(request):
 @login_required    
 def user_logout(request):
     '''
-    used of logout
+    used for logout
 
     parameter: None
 
