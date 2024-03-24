@@ -4,7 +4,7 @@ cffi==1.16.0
 charset-normalizer==3.3.2
 cryptography==41.0.7
 defusedxml==0.8.0rc2
-Django==5.0
+Django>=4.2.7,<4.3
 django-templated-mail==1.1.1
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.1
@@ -22,3 +22,5 @@ social-auth-core==4.5.1
 sqlparse==0.4.4
 typing_extensions==4.9.0
 urllib3==2.1.0
+psycopg2>=2.8.6,<2.9
+uWSGI>=2.0.19.1,<2.1

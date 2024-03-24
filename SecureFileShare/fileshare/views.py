@@ -7,7 +7,7 @@ from django.http import FileResponse,HttpResponseNotFound
 from .models import ClientUserProfile, UploadedFile
 from django.core.signing import TimestampSigner, BadSignature
 from django.contrib.auth import authenticate,login,logout
-from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 import os
 import base64
